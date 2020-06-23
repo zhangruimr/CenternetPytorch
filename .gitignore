@@ -130,4 +130,4 @@ dmypy.json
 
 #added ignored
 *.mp4
-/weights/
+/weights/*pth

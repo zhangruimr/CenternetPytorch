@@ -1,5 +1,4 @@
 from __future__ import division
-import tensorflow as tf
 import torch as t
 import math
 import numpy as np
@@ -223,7 +222,7 @@ if __name__ == "__main__":
     x[0,100,100,0]=1
     x[0,300,300,0]=1
     x[0,500,500,0]=1
-    x = tf.convert_to_tensor(x)
+    # = tf.convert_to_tensor(x)
     y = gaussian2D(x, 5)
     cv2.imshow("win", y[0].numpy()[:,:,0])
     cv2.waitKey(0)

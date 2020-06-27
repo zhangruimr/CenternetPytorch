@@ -60,7 +60,7 @@ class pre(nn.Module):
         x = self.cbr(inputs)
 
         x = self.residual(x)
-        #print(x.shape)
+
         return x
 
 class left_module(nn.Module):
@@ -82,32 +82,34 @@ class left_module(nn.Module):
 
         for sub in self.list:
             x = sub(x)
-            #print(x.shape)
+
             outputs.append(x)
 
         return outputs
 
 class right_module(nn.Module):
-    def __init__(self, pre_channel,dimension=(256, 256, 384, 384, 512)):
+    def __init__(self, pre_channel, dimension=(256, 384, 384, 384, 512)):
         super(right_module, self).__init__()
         self.dimension = dimension
         self.middle_modules = nn.Sequential()
         pre_c  = pre_channel
-        pre_c2  = dimension[-2]
-        for i in range(4):
 
+
+        for i in range(4):
             self.middle_modules.add_module("res_middle{}".format(i), Residual(pre_c, dimension[-1]))
             pre_c = dimension[-1]
+
         self.connects = nn.ModuleList()
         self.rights = nn.ModuleList()
         for i in reversed(range(len(dimension))):
             sequence = nn.Sequential()
-            sequence.add_module("res1_top{}".format(i), Residual(pre_c2, dimension[max(i-1, 0)]))
+            sequence.add_module("res1_top{}".format(i), Residual(dimension[max(i-1, 0)], dimension[max(i-1, 0)]))
 
             pre_c2 = dimension[max(i-1, 0)]#(256, 384, 384, 384, 512))
 
             sequence.add_module("res2_top{}".format(i), Residual(dimension[max(i-1, 0)], dimension[max(i-1, 0)]))
             self.connects.append(sequence)
+
             sequence = nn.Sequential()
 
             right_seq = nn.Sequential()
@@ -118,9 +120,10 @@ class right_module(nn.Module):
             right_seq.add_module("res4{}".format(i), Residual(pre_c, dimension[max(i-1, 0)]))
             pre_c = dimension[max(i-1, 0)]
 
-            #right_seq.add_module("up{}".format(i), nn.Upsample(scale_factor=(2, 2)))
+
             right_seq.add_module("up{}".format(i), nn.ConvTranspose2d(dimension[max(i-1, 0)],dimension[max(i-1, 0)], kernel_size=2, stride=2, bias=True,padding=0, output_padding=0))
             self.rights.append(right_seq)
+
             right_seq = nn.Sequential()
 
     def forward(self, inputs):
@@ -133,6 +136,7 @@ class right_module(nn.Module):
             shortcut = self.connects[i](inputs[-1])
 
             inputs.pop(-1)
+
             x = self.rights[i](x)
 
             x = shortcut + x
@@ -146,9 +150,9 @@ class Hourglass(nn.Module):
         self.pre_channels = pre_channels
         self.dimension = dimension
         self.left = left_module(pre_channels, self.dimension)
-        self.dimension[1] = 256
+
         self.right = right_module(self.dimension[-1], self.dimension)
-        self.dimension[1] = 384
+
         self.cbr = CBR(self.dimension[0],256,3)
         self.num = i
         if i > 0:
@@ -162,11 +166,13 @@ class Hourglass(nn.Module):
     def forward(self, inputs):
         output = []
         x = self.left(inputs)
+
         x = self.right(x)
+
         x = self.cbr(x)
         if self.num > 0:
           for i in range(len(self.creatHead)):
-              #print(self.creatHead[i](x).shape)
+
               output.append(self.creatHead[i](x))
           return output
         else:
@@ -174,5 +180,5 @@ class Hourglass(nn.Module):
 
 if __name__ == "__main__":
     x = t.zeros((2, 256, 128, 128))
-    model = Hourglass([20,2,2], 256)
+    model = Hourglass(0,[20, 2, 2], 256)
     output, x = model(x)

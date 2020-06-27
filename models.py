@@ -38,4 +38,4 @@ if __name__ == "__main__":
     x = t.zeros((2, 3, 512, 512))
     model = CenterNet([20, 2, 2])
     x = model(x)
-    print(x[0].shape)
+    print(x[2].shape)

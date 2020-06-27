@@ -77,6 +77,8 @@ def train(**config):
         print("Epoch---{}".format(epoch))
         for i, (imgs, labels, road) in enumerate(dataloader):
 
+            imgs = t.ones((1, 3, 512, 512))
+            labels = t.ones((2,1,2,100,200))
 
             print("-----Epoch-{}-----Batch-{}".format(epoch, i).format(epoch))
             loader_num = len(dataloader)
@@ -88,8 +90,8 @@ def train(**config):
             output = net(imgs)
             print("max",t.max(output[0]))
             print("min",t.min(output[0]))
-            print("number", t.sum( output[0] >= 0 ))
-
+            print("number>0", t.sum( output[0] >= 0 ))
+            print("number<0", t.sum(output[0] < 0))
             score_heatmap, off_heatmap, size_heatmap, gass_mask, pos_mask, pos_wh_mask \
                       = laebls2featuremap_labels(np.transpose(output[0].cpu().detach().numpy(), (0, 2, 3, 1)), labels.cpu().detach().numpy(), (4, 4), 1)
             focalloss = focal_loss(output[0], score_heatmap, gass_mask, pos_mask)

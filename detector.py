@@ -35,27 +35,23 @@ def detector(**config):
         color .append((random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
 
     for img, road in tqdm.tqdm(testloader):
-        #cv2.imshow("SRC", np.transpose(img[0].numpy(), (1,2,0)))
-        #print(road)
+
         img = img.cuda()
         with t.no_grad():
             heatmap = model(img)
         detection = heatmap_decoding(heatmap[0].cpu().detach().numpy(), heatmap[1].cpu().detach().numpy(), heatmap[2].cpu().detach().numpy())
         detection = detection[detection[:, 4] > 0.5]
-        # print(detection)
+
 
         src = cv2.imread(road[0])
         detection = decode_box(src, detection, (input_w, input_h))
         detection = nms(detection)
-        #print("detect",detection)
+
         src = draw_box(src, detection, classname, color)
 
         cv2.imshow("results", src)
         cv2.waitKey(1)
         cv2.imwrite(resultsroad + road[0].split("/")[-1], src)
-        i+=1
-        if i > 200 :
-            break
 
 
 if __name__ == "__main__":

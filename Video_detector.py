@@ -33,6 +33,7 @@ def video_detect(**config):
     for i in range(len(classname)):
         color.append((random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
 
+#摄像头检测直接更改下面路径
     video = cv2.VideoCapture(videoroad)
 
     fourcc = cv2.VideoWriter_fourcc(*'XVID')

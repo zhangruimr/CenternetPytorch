@@ -58,7 +58,7 @@ def train(**config):
 
     optimizer = t.optim.Adam(net.parameters(), lr=lr)
     #optimizer.zero_grad()
-    scheduler = t.optim.lr_scheduler.StepLR(optimizer, 60, 0.1)
+    scheduler = t.optim.lr_scheduler.StepLR(optimizer, 90, 0.1)
     #Loss = []
     #Focal = []
     #Off = []
@@ -109,15 +109,13 @@ def train(**config):
             print("sizeloss:", sizeloss)
             loss = whole_loss(focalloss, sizeloss, offloss)
             loss.backward()
-            #print(i + 1 % 1)
+
             if (i + 1) % 16 == 0:
               #print("genxinl")
               optimizer.step()
               optimizer.zero_grad()
             print("loss:", loss)
-#        if epoch + 1 == 70 or epoch + 1 == 120 or epoch +1 == 160:
-#            lr = lr * 0.1
-#            optimizer = t.optim.Adam(net.parameters(), lr)
+
         scheduler.step()
         if (epoch + 1) % 8 == 0:
             if epoch < epoches - 1:

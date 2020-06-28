@@ -8,19 +8,22 @@ from models import *
 from utils.functions import *
 from utils.losses import *
 from datasets import *
+
+
 def init(model):
     for name, params in model.named_parameters():
         if name.find("bias") > 0:
             nn.init.constant_(params, 0)
         elif name.find("weight") > 0:
             if name.find("conv2d") > 0 or name.find("up") > 0:
-                nn.init.normal_(params, 0, 0.001)
+                nn.init.normal_(params, 0, 0.01)
             else:
                 nn.init.constant_(params, 1)
 
+
 def train(**config):
     trainroad = config["trainroad"]
-    input_w,input_h = (int(config["input_w"]), int(config["input_h"]))
+    input_w, input_h = (int(config["input_w"]), int(config["input_h"]))
     classes = int(config["class"])
     batch = int(config["batch"])
     epoches = int(config["epoch"])
@@ -28,17 +31,17 @@ def train(**config):
     weight_load = config["weight_load"]
     print(weight_load)
     lr = float(config["lr"])
-    os.makedirs(name="weights",exist_ok=True)
+    os.makedirs(name="weights", exist_ok=True)
     if t.cuda.is_available():
         print("GPU Training")
     else:
         print("CPU Training")
     device = t.device("cuda:3" if t.cuda.is_available() else "cpu")
-    dataset = TrainDataset(trainroad, (input_w,input_h))
+    dataset = TrainDataset(trainroad, (input_w, input_h))
 
-    dataloader = DataLoader(dataset, batch_size=batch, shuffle=True,drop_last=True, collate_fn=dataset.collate_fn)
+    dataloader = DataLoader(dataset, batch_size=batch, shuffle=True, drop_last=True, collate_fn=dataset.collate_fn)
     model = CenterNet([classes, 2, 2])
-    net = t.nn.DataParallel(model, device_ids=[0, 1])
+    net = t.nn.DataParallel(model, device_ids=[0, 1, 2])
 
     if weight_load != "":
         print("----加载模型参数----")
@@ -57,71 +60,55 @@ def train(**config):
     whole_loss = wholeLoss().cuda()
 
     optimizer = t.optim.Adam(net.parameters(), lr=lr)
-    #optimizer.zero_grad()
-    scheduler = t.optim.lr_scheduler.StepLR(optimizer, 90, 0.1)
-    #Loss = []
-    #Focal = []
-    #Off = []
-    #Size = []
-    #x = []
-    #fig, axis = plt.subplots(2, 2)
-    #plt.tight_layout()
-    #axis[0, 0].set_title("HP-loss")
-    #axis[0, 1].set_title("HP-focal")
-    #axis[1, 0].set_title("HP-offset")
-    #axis[1, 1].set_title("HP-size")
+    #optimizer = t.optim.SGD(net.parameters(), lr=lr)
 
-    #plt.ion()
+    scheduler = t.optim.lr_scheduler.StepLR(optimizer, 100, 0.1)
+
     for epoch in range(epoches):
 
         print("Epoch---{}".format(epoch))
         for i, (imgs, labels, road) in enumerate(dataloader):
 
-            imgs = t.ones((1, 3, 512, 512))
-            labels = t.ones((2,1,2,100,200))
-
             print("-----Epoch-{}-----Batch-{}".format(epoch, i).format(epoch))
             loader_num = len(dataloader)
 
-            imgs = imgs.cuda(1)
-            labels = labels.cuda(1)
-
+            imgs = imgs.cuda()
+            labels = labels.cuda()
 
             output = net(imgs)
-            print("max",t.max(output[0]))
-            print("min",t.min(output[0]))
-            print("number>0", t.sum( output[0] >= 0 ))
+
+            print("max", t.max(output[0]))
+            print("min", t.min(output[0]))
+            print("number>0", t.sum(output[0] >= 0))
             print("number<0", t.sum(output[0] < 0))
             score_heatmap, off_heatmap, size_heatmap, gass_mask, pos_mask, pos_wh_mask \
-                      = laebls2featuremap_labels(np.transpose(output[0].cpu().detach().numpy(), (0, 2, 3, 1)), labels.cpu().detach().numpy(), (4, 4), 1)
+                = laebls2featuremap_labels(np.transpose(output[0].cpu().detach().numpy(), (0, 2, 3, 1)),
+                                           labels.cpu().detach().numpy(), (4, 4), 1)
             focalloss = focal_loss(output[0], score_heatmap, gass_mask, pos_mask)
 
-            #Focal.append(float(focalloss.cpu().detach().numpy()))
-            print("focalloss:",focalloss)
-            offloss = off_loss(output[1], off_heatmap, pos_wh_mask)
-            
-            #Off.append(float(offloss.cpu().detach().numpy()))
-            print("offloss:", offloss)
-            sizeloss = size_loss(output[2], size_heatmap,  pos_wh_mask)
-            #print("sum",t.sum(size_heatmap > 0), t.sum(pos_wh_mask >= 1))
 
-            #Size.append(float(sizeloss.cpu().detach().numpy()))
+            print("focalloss:", focalloss)
+            offloss = off_loss(output[1], off_heatmap, pos_wh_mask)
+            print("offloss:", offloss)
+            sizeloss = size_loss(output[2], size_heatmap, pos_wh_mask)
             print("sizeloss:", sizeloss)
             loss = whole_loss(focalloss, sizeloss, offloss)
-            loss.backward()
-
-            if (i + 1) % 16 == 0:
-              #print("genxinl")
-              optimizer.step()
-              optimizer.zero_grad()
             print("loss:", loss)
+
+            loss.backward()
+            if (i + 1) % 16 ==0:
+               optimizer.step()
+               optimizer.zero_grad()
+
 
         scheduler.step()
         if (epoch + 1) % 8 == 0:
             if epoch < epoches - 1:
                 t.save(net.state_dict(), "weights/Epoch{}.pth".format(epoch))
             else:
-                t.save(net.state_dict(),"weights/best.pth")
+                t.save(net.state_dict(), "weights/best.pth")
+
+
 if __name__ == "__main__":
     config = config_obtain("config.cfg")
     train(**config)

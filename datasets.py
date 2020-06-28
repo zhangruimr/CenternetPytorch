@@ -1,7 +1,6 @@
 from __future__ import division
 import torch as t
 from torch.nn import functional as F
-#import torch.nn as nn
 from torch.utils.data import Dataset,DataLoader
 from torchvision import transforms as T
 import numpy as np
@@ -69,7 +68,7 @@ class TrainDataset(Dataset):
         with open(img_road, 'r') as tp:
             self.imgs_road = tp.read()
             self.imgs_road = [i for i in self.imgs_road.split("\n") if i != '']
-        self.labels_road = [i.replace("images", "labels").replace("jpg", "txt"). \
+        self.labels_road = [i.replace("JPEGImages", "labels").replace("jpg", "txt"). \
                                 replace("jpeg", "txt").replace("png", "txt") for i in self.imgs_road]
         self.size = size
     def __getitem__(self, index):
@@ -88,9 +87,10 @@ class TrainDataset(Dataset):
 
         return img, label, self.imgs_road[index]
     def collate_fn(self, batch):
-        #print(list(zip(*batch)))
+
         imgs, labels, roads = list(zip(*batch))
         for i in range(len(labels)):
+
             labels[i].detach()[:,0] = i
         imgs = t.stack(imgs, 0)
         labels = t.cat(labels, 0)
@@ -107,14 +107,14 @@ class TestDataset(Dataset):
     def __getitem__(self, index):
         img = Image.open(self.imgs_road[index])
         img = T.ToTensor()(img)
-        #print("Image",img.shape)
+
         if len(img.shape) < 3:
             print("image error, road in {}".format(self.imgs_road[index]))
         img = test_process(img, self.size)
         return img, self.imgs_road[index]
 
     def collate_fn(self, batch):
-        # print(list(zip(*batch)))
+
         imgs, roads = list(zip(*batch))
         imgs = t.stack(imgs, 0)
         return imgs,  roads
@@ -124,9 +124,12 @@ class TestDataset(Dataset):
 if __name__ == "__main__":
      dataset  = TrainDataset("./data/train.txt", (512, 512))
      dataloader = DataLoader(dataset, batch_size=1, collate_fn=dataset.collate_fn)
-     for img,  roads in dataloader:
-
+     for img, labels,  roads in dataloader:
+         print(labels)
          imgs = img[0].permute(1,2,0).contiguous().numpy()[:,:,::-1].copy()
+         box = labels[1].numpy()
+         x, y, w, h = int(box[2]), int(box[3]), int(box[4]), int(box[5])
 
+         cv2.rectangle(imgs, (int(x-0.5*w), int(y-0.5*h)), (int(x+0.5 * w), int(y + 0.5 * h)), (0, 0, 255), 2, 1)
          cv2.imshow("win", imgs)
          cv2.waitKey(0)

@@ -39,6 +39,7 @@ def detector(**config):
         img = img.cuda()
         with t.no_grad():
             heatmap = model(img)
+
         detection = heatmap_decoding(heatmap[0].cpu().detach().numpy(), heatmap[1].cpu().detach().numpy(), heatmap[2].cpu().detach().numpy())
         detection = detection[detection[:, 4] > 0.5]
 
@@ -50,8 +51,9 @@ def detector(**config):
         src = draw_box(src, detection, classname, color)
 
         cv2.imshow("results", src)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
         cv2.imwrite(resultsroad + road[0].split("/")[-1], src)
+
 
 
 if __name__ == "__main__":

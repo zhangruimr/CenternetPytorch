@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module version="4">
   <component name="NewModuleRootManager">
+<<<<<<< HEAD
     <orderEntry type="jdk" jdkName="Python 3.6 (VirtualEnvironment)" jdkType="Python SDK" />
+=======
+    <content url="file://$MODULE_DIR$" />
+    <orderEntry type="jdk" jdkName="Python 3.5 (VirtualEnvironments)" jdkType="Python SDK" />
+>>>>>>> ba760d67cd6b4bb6734a9bda63d4c1efa394553d
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

@@ -128,7 +128,7 @@ class right_module(nn.Module):
 
     def forward(self, inputs):
         x = self.middle_modules(inputs[-1])
-        #short = inputs[-1]
+
         inputs.pop(-1)
         for i in range(len(self.connects)):
 

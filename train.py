@@ -40,8 +40,7 @@ def train(**config):
     dataset = TrainDataset(trainroad, (input_w, input_h))
 
     dataloader = DataLoader(dataset, batch_size=batch, shuffle=True, drop_last=True, collate_fn=dataset.collate_fn)
-    model = CenterNet([classes, 2, 2])
-    net = t.nn.DataParallel(model, device_ids=[0, 1, 2])
+    net = CenterNet([classes, 2, 2])
 
     if weight_load != "":
         print("----加载模型参数----")

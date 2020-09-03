@@ -19,7 +19,6 @@ def detector(**config):
     head = [int(i.strip()) for i in config["head"].split(",")]
     os.makedirs(resultsroad, exist_ok=True)
     model = CenterNet(head)
-    model = t.nn.DataParallel(model, device_ids=[0,1])
     model = model.cuda()
     model.eval()
     if os.path.exists(weightsroad):
